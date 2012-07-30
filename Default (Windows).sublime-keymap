@@ -1,0 +1,5 @@
+[  
+    {   
+        "keys": ["shift+f5"], "command": "sublime_updater"   
+    }  
+]  
