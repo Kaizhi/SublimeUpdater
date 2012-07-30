@@ -5,6 +5,7 @@ import urlparse
 import os
 import threading 
 import json
+import sys
 
 DOWNLOAD_URL = "http://c758482.r82.cf2.rackcdn.com/Sublime%20Text%202.0.1%20x64%20Setup.exe"
 UPDATE_URL = "http://www.sublimetext.com/updates/2/stable/updatecheck" #url to check for latest st2 version
@@ -19,26 +20,26 @@ class BackgroundDownloader(threading.Thread):
 
     def run(self):  
         try:  
-        	file_name = self.url.split('/')[-1]
-        	u = urllib2.urlopen(self.url)
-        	f = open(file_name, 'wb')
-        	meta = u.info()
-        	file_size = int(meta.getheaders("Content-Length")[0])
-        	print "Downloading: %s Bytes: %s" % (file_name, file_size)
+            file_name = self.url.split('/')[-1]
+            u = urllib2.urlopen(self.url)
+            f = open(file_name, 'wb')
+            meta = u.info()
+            file_size = int(meta.getheaders("Content-Length")[0])
+            print "Downloading: %s Bytes: %s" % (file_name, file_size)
 
-        	file_size_dl = 0
-        	block_sz = 8192
-        	while True:
-        	    buffer = u.read(block_sz)
-        	    if not buffer:
-        	        break
+            file_size_dl = 0
+            block_sz = 8192
+            while True:
+                buffer = u.read(block_sz)
+                if not buffer:
+                    break
 
-        	    file_size_dl += len(buffer)
-        	    f.write(buffer)
+                file_size_dl += len(buffer)
+                f.write(buffer)
 
-        	f.close()  
-        	self.result = True
-        	return
+            f.close()  
+            self.result = True
+            return
   
         except (urllib2.HTTPError) as (e):  
             err = '%s: HTTP error %s contacting URL' % (__name__, str(e.code))  
@@ -47,28 +48,47 @@ class BackgroundDownloader(threading.Thread):
 
         self.result = False  
 
-
 class SublimeUpdaterCommand(sublime_plugin.ApplicationCommand):  
+    def handle_threads(self,threads):
+        next_threads = []
+        for thread in threads:
+            if thread.is_alive():
+                next_threads.append(thread)
+                continue
+            if thread.result == False:
+                continue
 
-	def getLatestVersion():
-		data = urllib2.urlopen(UPDATE_URL).read()
-		data = json.loads(data)
-		return data['latest_version']
+        threads = next_threads
 
-	def run(self):
-		if sublime.platform() == "windows":
-			if self.getLatestVersion == int(sublime.version()):
-				print ("currently on latest version")
-			else:
-				print ("new version available")
-				#download the latest installer
-				thr = BackgroundDownloader(DOWNLOAD_URL)
-				thr.start()
+        if len(threads):
+            sublime.status_message('SublimeUpdater is downloading update')
 
-	
-		elif sublime.platform() == "linux":
-			print "linux detected"
-	
-		elif sublime.platform() == "osx":
-			print "mac detected"
+            sublime.set_timeout(lambda: self.handle_threads(threads), 50)
+            return
+
+        sublime.status_message('SublimeUpdater download succeeded, installing... ')
+
+    def getLatestVersion(self):
+        data = urllib2.urlopen(UPDATE_URL).read()
+        data = json.loads(data)
+        return data['latest_version']
+
+    def run(self):
+        if sublime.platform() == "windows":
+            if int(self.getLatestVersion()) == int(sublime.version()):
+                print ("currently on latest version")
+            else:
+                print ("new version available")
+                #download the latest installer
+                thr = BackgroundDownloader(DOWNLOAD_URL)
+                threads = []
+                threads.append(thr)
+                thr.start()
+                self.handle_threads(threads)
+    
+        elif sublime.platform() == "linux":
+            print "linux detected"
+    
+        elif sublime.platform() == "osx":
+            print "mac detected"
 
