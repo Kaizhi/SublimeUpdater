@@ -1,15 +1,32 @@
 import sublime, sublime_plugin  
 import urllib2
 import shutil
-import urlparse
 import os
 import threading 
 import json
 import sys
+import formatter, htmllib
+
 
 DOWNLOAD_URL = "http://c758482.r82.cf2.rackcdn.com/Sublime%20Text%202.0.1%20x64%20Setup.exe"
 UPDATE_URL = "http://www.sublimetext.com/updates/2/stable/updatecheck" #url to check for latest st2 version
 #http://unattended.sourceforge.net/InnoSetup_Switches_ExitCodes.html
+
+class LinksParser(htmllib.HTMLParser):
+
+    def __init__(self, formatter):
+        htmllib.HTMLParser.__init__(self, formatter)
+        self.links = []
+
+    def start_a(self, attrs):
+        if len(attrs) > 0 :
+            for attr in attrs :
+                if attr[0] == "href":
+                    if attr[1].find("rackcdn") != -1:
+                        self.links.append(attr[1])
+
+    def get_links(self):
+        return self.links
 
 class BackgroundDownloader(threading.Thread):  
         
@@ -80,6 +97,13 @@ class SublimeUpdaterCommand(sublime_plugin.ApplicationCommand):
             else:
                 print ("new version available")
                 #download the latest installer
+                format = formatter.NullFormatter()
+                parser = LinksParser(format)
+                f = urllib2.urlopen("http://www.sublimetext.com/2")
+                html = f.read()
+                parser.feed(html)
+                parser.close()
+
                 thr = BackgroundDownloader(DOWNLOAD_URL)
                 threads = []
                 threads.append(thr)
