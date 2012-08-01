@@ -105,7 +105,7 @@ class SublimeUpdaterCommand(sublime_plugin.ApplicationCommand):
         subprocess.call(run_params) #run the installer     
 
     def run(self):
-        if int(self.getLatestVersion()) != int(sublime.version()):
+        if int(self.getLatestVersion()) == int(sublime.version()):
             print ("currently on latest version")
         else:
             print ("new version available")
