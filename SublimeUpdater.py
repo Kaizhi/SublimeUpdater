@@ -94,7 +94,7 @@ class SublimeUpdaterCommand(sublime_plugin.ApplicationCommand):
 
     def startInstaller(self):
         s = sublime.load_settings("Preferences.sublime-settings") #get the install path if any
-        install_path = s.get("install_path")
+        install_path = s.get("install_path", "")
 
         file_name = download_link[download_link.find("Sub"):]
         if len(install_path) == 0:
