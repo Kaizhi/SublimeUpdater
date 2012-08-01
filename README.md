@@ -2,6 +2,8 @@
 
 Auto updater for Sublime Text 2
 
+WIP - currently only Windows support implemented
+
 ## Installation
 
 ### COMING SOON --- Using Sublime Package Control
