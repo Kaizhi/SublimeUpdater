@@ -6,11 +6,12 @@ import threading
 import json
 import sys
 import formatter, htmllib
+import subprocess
+from urllib import quote
 
 
-DOWNLOAD_URL = "http://c758482.r82.cf2.rackcdn.com/Sublime%20Text%202.0.1%20x64%20Setup.exe"
 UPDATE_URL = "http://www.sublimetext.com/updates/2/stable/updatecheck" #url to check for latest st2 version
-#http://unattended.sourceforge.net/InnoSetup_Switches_ExitCodes.html
+download_link = ""
 
 class LinksParser(htmllib.HTMLParser):
 
@@ -84,35 +85,58 @@ class SublimeUpdaterCommand(sublime_plugin.ApplicationCommand):
             return
 
         sublime.status_message('SublimeUpdater download succeeded, installing... ')
+        self.startInstaller()
 
     def getLatestVersion(self):
         data = urllib2.urlopen(UPDATE_URL).read()
         data = json.loads(data)
         return data['latest_version']
 
+    def startInstaller(self):
+        s = sublime.load_settings("Preferences.sublime-settings") #get the install path if any
+        install_path = s.get("install_path")
+
+        file_name = download_link[download_link.find("Sub"):]
+        if len(install_path) == 0:
+            run_params = [file_name, '/silent']
+        else:
+            run_params = [file_name, '/silent', '/dir=' + install_path]
+
+        subprocess.call(run_params) #run the installer     
+
     def run(self):
-        if sublime.platform() == "windows":
-            if int(self.getLatestVersion()) == int(sublime.version()):
-                print ("currently on latest version")
-            else:
-                print ("new version available")
+        if int(self.getLatestVersion()) != int(sublime.version()):
+            print ("currently on latest version")
+        else:
+            print ("new version available")
+            if sublime.platform() == "windows":
                 #download the latest installer
+
+                f = urllib2.urlopen("http://www.sublimetext.com/2")
                 format = formatter.NullFormatter()
                 parser = LinksParser(format)
-                f = urllib2.urlopen("http://www.sublimetext.com/2")
-                html = f.read()
-                parser.feed(html)
+                html = f.read() 
+                parser.feed(html) #get the list of latest installer urls
                 parser.close()
+                urls = parser.get_links()
+                global download_link
+                if sublime.arch() == "x32":
+                    download_link = urls[1]
 
-                thr = BackgroundDownloader(DOWNLOAD_URL)
+                elif sublime.arch() == "x64":
+                    download_link = urls[3]
+
+                download_link = quote(download_link, safe="%/:=&?~#+!$,;'@()*[]")
+                thr = BackgroundDownloader(download_link)
                 threads = []
                 threads.append(thr)
                 thr.start()
                 self.handle_threads(threads)
-    
-        elif sublime.platform() == "linux":
-            print "linux detected"
-    
-        elif sublime.platform() == "osx":
-            print "mac detected"
+
+
+            elif sublime.platform() == "linux":
+                print "linux detected"
+        
+            elif sublime.platform() == "osx":
+                print "mac detected"
 
