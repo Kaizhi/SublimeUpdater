@@ -1,0 +1,20 @@
+{
+	"schema_version": "1.2",
+	"packages": [
+		{
+			"name": "SublimeUpdater",
+			"description": "Auto updater for Sublime Text 2 - currently Windows only",
+			"author": "Kaizhi",
+			"homepage": "https://github.com/Kaizhi/SublimeUpdater",
+			"last_modified": "2012-08-31 05:04:31",
+			"platforms": {
+				"windows": [
+					{
+						"version": "1.0",
+						"url": "https://nodeload.github.com/Kaizhi/SublimeUpdater/zipball/master"
+					}
+				]
+			}
+		}
+	]
+}
