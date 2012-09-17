@@ -2,7 +2,7 @@
 	"schema_version": "1.2",
 	"packages": [
 		{
-			"name": "SublimeUpdater",
+			"name": "Updater",
 			"description": "Auto updater for Sublime Text 2 - currently Windows only",
 			"author": "Kaizhi",
 			"homepage": "https://github.com/Kaizhi/SublimeUpdater",
